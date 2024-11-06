@@ -201,7 +201,7 @@ class AbstractUser(ABC):
             )
 
         if self.is_relaybot:
-            base_logger = logging.getLogger("telethon.relaybot")
+            base_logger = logging.get_Logger("telethon.relaybot")
         else:
             base_logger = logging.getLogger(f"telethon.{self.tgid or -hash(self.mxid)}")
 
@@ -754,9 +754,8 @@ class AbstractUser(ABC):
             self.log.debug("Ignoring relaybot-sent message %s to %s", update.id, portal.tgid_log)
             return
 
-        time.sleep(2)
-
         try:
+            time.sleep(2)
             msgs = await self.client.get_messages(ids=[update.id])
             if len(msgs) == 0:
                 self.log.warning("Message %d not found", update.id)
