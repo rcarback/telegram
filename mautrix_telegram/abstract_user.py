@@ -92,6 +92,8 @@ if TYPE_CHECKING:
     from .__main__ import TelegramBridge
     from .bot import Bot
 
+CATCH_UP_INTERVAL = 10
+
 UpdateMessage = Union[
     UpdateShortChatMessage,
     UpdateShortMessage,
@@ -117,6 +119,10 @@ UPDATE_ERRORS = Counter(
 
 
 class AbstractUser(ABC):
+
+    _update_lock: asyncio.Lock = asyncio.Lock()
+    _last_update_time: float = 0
+
     loop: asyncio.AbstractEventLoop = None
     log: TraceLogger
     az: AppService
@@ -754,21 +760,6 @@ class AbstractUser(ABC):
             self.log.debug("Ignoring relaybot-sent message %s to %s", update.id, portal.tgid_log)
             return
 
-
-        try:
-            self.log.warning("Message %d sleeping", update.id)
-            time.sleep(10)
-            await self.client.catch_up()
-            msgs = await self.client.get_messages(portal.peer, ids=[update.id])
-            if len(msgs) == 0:
-                self.log.warning("Message %d not found", update.id)
-                return
-        except Exception:
-            self.log.warning("Message %d not found, exception: %s", update.id, exc_info=True)
-            return
-
-        self.log.warning("Message %d continuing", update.id)
-
         task = self._call_portal_message_handler(update, original_update, portal, sender)
         if portal.backfill_lock.locked:
             self.log.debug(
@@ -778,7 +769,13 @@ class AbstractUser(ABC):
         else:
             await task
 
-        await self.client.catch_up()
+        with self._update_lock:
+            now = time.time()
+            interval = now - self._last_update_time
+            if interval > CATCH_UP_INTERVAL:
+                self.log.info("Message %d initiating catch-up", update.id)
+                await self.client.catch_up()
+                self._last_update_time = now
 
 
 
