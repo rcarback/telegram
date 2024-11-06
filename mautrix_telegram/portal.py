@@ -3443,11 +3443,20 @@ class Portal(DBPortal, BasePortal):
         self, source: au.AbstractUser, sender: p.Puppet | None, evt: Message
     ) -> None:
 
-        time.sleep(2)
         try:
             await self.client.send_read_acknowledge(self)
+            time.sleep(2)
         except Exception:
             pass
+
+        try:
+            msgs = await self.client.get_messages(self, ids=[evt.id])
+            if len(msgs) == 0:
+                self.log.warning("Message %d not found", evt.id)
+                return
+        except Exception:
+            self.log.warning("Message %d not found, exception", evt.id)
+            return
 
         if not self.mxid:
             if source.is_relaybot and self.config["bridge.relaybot.ignore_unbridged_group_chat"]:
