@@ -774,8 +774,10 @@ class AbstractUser(ABC):
 
 
     async def _maybe_catch_up(self) -> None:
-        if self._catching_up:
-            return
+        with self._update_lock:
+            if self._catching_up:
+                return
+
         with self._update_lock:
             self._catching_up = True
             now = time.time()
