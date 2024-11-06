@@ -201,7 +201,7 @@ class AbstractUser(ABC):
             )
 
         if self.is_relaybot:
-            base_logger = logging.get_Logger("telethon.relaybot")
+            base_logger = logging.getLogger("telethon.relaybot")
         else:
             base_logger = logging.getLogger(f"telethon.{self.tgid or -hash(self.mxid)}")
 
