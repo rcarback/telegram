@@ -755,7 +755,7 @@ class AbstractUser(ABC):
             return
 
         try:
-            await self.client.send_read_acknowledge()
+            await self.client.send_read_acknowledge(portal.peer)
             time.sleep(2)
         except Exception:
             self.log.warning("Failed to send read acknowledge, exception: %s", exc_info=True)
@@ -766,7 +766,7 @@ class AbstractUser(ABC):
                 self.log.warning("Message %d not found", update.id)
                 return
         except Exception:
-            self.log.warning("Message %d not found, exception", update.id)
+            self.log.warning("Message %d not found, exception: %s", update.id, exc_info=True)
             return
 
         task = self._call_portal_message_handler(update, original_update, portal, sender)
