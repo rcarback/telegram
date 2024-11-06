@@ -755,6 +755,7 @@ class AbstractUser(ABC):
             return
 
         try:
+            self.log.warning("Message %d sleeping", update.id)
             time.sleep(2)
             msgs = await self.client.get_messages(ids=[update.id])
             if len(msgs) == 0:
@@ -763,6 +764,8 @@ class AbstractUser(ABC):
         except Exception:
             self.log.warning("Message %d not found, exception: %s", update.id, exc_info=True)
             return
+
+        self.log.warning("Message %d continuing", update.id)
 
         task = self._call_portal_message_handler(update, original_update, portal, sender)
         if portal.backfill_lock.locked:
