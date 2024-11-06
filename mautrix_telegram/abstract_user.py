@@ -769,7 +769,7 @@ class AbstractUser(ABC):
         else:
             await task
 
-        time.sleep(CATCH_UP_INTERVAL)
+        time.sleep(CATCH_UP_INTERVAL * 0.5)
         cutask = self._maybe_catch_up()
         background_task.create(cutask)
 
