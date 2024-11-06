@@ -754,11 +754,7 @@ class AbstractUser(ABC):
             self.log.debug("Ignoring relaybot-sent message %s to %s", update.id, portal.tgid_log)
             return
 
-        try:
-            await self.client.send_read_acknowledge(portal.peer)
-            time.sleep(2)
-        except Exception:
-            self.log.warning("Failed to send read acknowledge, exception: %s", exc_info=True)
+        time.sleep(2)
 
         try:
             msgs = await self.client.get_messages(ids=[update.id])
