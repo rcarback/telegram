@@ -787,9 +787,8 @@ class AbstractUser(ABC):
             self._last_update_time = time.time()
 
         async with self._update_lock:
-            if not self._catching_up:
-                self.log.info("Initiating catch-up")
-                await self.client.catch_up()
+            self.log.info("Initiating catch-up")
+            await self.client.catch_up()
             self._catching_up = False
 
 
