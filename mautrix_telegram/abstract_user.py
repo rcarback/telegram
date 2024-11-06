@@ -92,7 +92,7 @@ if TYPE_CHECKING:
     from .__main__ import TelegramBridge
     from .bot import Bot
 
-CATCH_UP_INTERVAL = 10
+CATCH_UP_INTERVAL = 5
 
 UpdateMessage = Union[
     UpdateShortChatMessage,
@@ -122,7 +122,7 @@ class AbstractUser(ABC):
 
     _update_lock: asyncio.Lock = asyncio.Lock()
     _last_update_time: float = 0
-
+    _catching_up: bool = False
     loop: asyncio.AbstractEventLoop = None
     log: TraceLogger
     az: AppService
@@ -769,16 +769,27 @@ class AbstractUser(ABC):
         else:
             await task
 
-        should_catch_up = False
+        cutask = self._maybe_catch_up()
+        background_task.create(cutask)
+
+
+    async def _maybe_catch_up(self) -> None:
+        if self._catching_up:
+            return
         with self._update_lock:
+            self._catching_up = True
             now = time.time()
             interval = now - self._last_update_time
-            if interval > CATCH_UP_INTERVAL:
-                self._last_update_time = now
-                should_catch_up = True
-        if should_catch_up:
-            self.log.info("Message %d initiating catch-up", update.id)
-            await self.client.catch_up()
+            if interval < CATCH_UP_INTERVAL:
+                time.sleep(CATCH_UP_INTERVAL - interval)
+            self._last_update_time = time.time()
+
+        with self._update_lock:
+            if not self._catching_up:
+                self.log.info("Initiating catch-up")
+                await self.client.catch_up()
+            self._catching_up = False
+
 
 
     async def _call_portal_message_handler(
