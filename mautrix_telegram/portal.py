@@ -3447,7 +3447,7 @@ class Portal(DBPortal, BasePortal):
             await self.client.send_read_acknowledge(self)
             time.sleep(2)
         except Exception:
-            pass
+            self.log.warning("Failed to send read acknowledge, exception: %s", exc_info=True)
 
         try:
             msgs = await self.client.get_messages(self, ids=[evt.id])
