@@ -774,11 +774,11 @@ class AbstractUser(ABC):
 
 
     async def _maybe_catch_up(self) -> None:
-        with self._update_lock:
+        async with self._update_lock:
             if self._catching_up:
                 return
 
-        with self._update_lock:
+        async with self._update_lock:
             self._catching_up = True
             now = time.time()
             interval = now - self._last_update_time
@@ -786,7 +786,7 @@ class AbstractUser(ABC):
                 time.sleep(CATCH_UP_INTERVAL - interval)
             self._last_update_time = time.time()
 
-        with self._update_lock:
+        async with self._update_lock:
             if not self._catching_up:
                 self.log.info("Initiating catch-up")
                 await self.client.catch_up()
