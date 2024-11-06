@@ -755,13 +755,13 @@ class AbstractUser(ABC):
             return
 
         try:
-            await self.client.send_read_acknowledge(self)
+            await self.client.send_read_acknowledge()
             time.sleep(2)
         except Exception:
             self.log.warning("Failed to send read acknowledge, exception: %s", exc_info=True)
 
         try:
-            msgs = await self.client.get_messages(self, ids=[update.id])
+            msgs = await self.client.get_messages(ids=[update.id])
             if len(msgs) == 0:
                 self.log.warning("Message %d not found", update.id)
                 return
