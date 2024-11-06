@@ -769,14 +769,16 @@ class AbstractUser(ABC):
         else:
             await task
 
+        should_catch_up = False
         with self._update_lock:
             now = time.time()
             interval = now - self._last_update_time
             if interval > CATCH_UP_INTERVAL:
-                self.log.info("Message %d initiating catch-up", update.id)
-                await self.client.catch_up()
                 self._last_update_time = now
-
+                should_catch_up = True
+        if should_catch_up:
+            self.log.info("Message %d initiating catch-up", update.id)
+            await self.client.catch_up()
 
 
     async def _call_portal_message_handler(
