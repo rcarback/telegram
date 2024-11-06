@@ -761,12 +761,12 @@ class AbstractUser(ABC):
             self.log.warning("Failed to send read acknowledge, exception: %s", exc_info=True)
 
         try:
-            msgs = await self.client.get_messages(self, ids=[evt.id])
+            msgs = await self.client.get_messages(self, ids=[update.id])
             if len(msgs) == 0:
-                self.log.warning("Message %d not found", evt.id)
+                self.log.warning("Message %d not found", update.id)
                 return
         except Exception:
-            self.log.warning("Message %d not found, exception", evt.id)
+            self.log.warning("Message %d not found, exception", update.id)
             return
 
         task = self._call_portal_message_handler(update, original_update, portal, sender)
