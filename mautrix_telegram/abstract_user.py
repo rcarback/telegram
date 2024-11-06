@@ -757,7 +757,7 @@ class AbstractUser(ABC):
         try:
             self.log.warning("Message %d sleeping", update.id)
             time.sleep(2)
-            msgs = await self.client.get_messages(ids=[update.id])
+            msgs = await self.client.get_messages(portal.peer, ids=[update.id])
             if len(msgs) == 0:
                 self.log.warning("Message %d not found", update.id)
                 return
