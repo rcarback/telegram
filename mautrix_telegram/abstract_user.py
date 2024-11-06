@@ -92,7 +92,7 @@ if TYPE_CHECKING:
     from .__main__ import TelegramBridge
     from .bot import Bot
 
-CATCH_UP_INTERVAL = 5
+CATCH_UP_INTERVAL = 3
 
 UpdateMessage = Union[
     UpdateShortChatMessage,
@@ -769,6 +769,7 @@ class AbstractUser(ABC):
         else:
             await task
 
+        time.sleep(CATCH_UP_INTERVAL)
         cutask = self._maybe_catch_up()
         background_task.create(cutask)
 
