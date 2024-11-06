@@ -754,6 +754,21 @@ class AbstractUser(ABC):
             self.log.debug("Ignoring relaybot-sent message %s to %s", update.id, portal.tgid_log)
             return
 
+        try:
+            await self.client.send_read_acknowledge(self)
+            time.sleep(2)
+        except Exception:
+            self.log.warning("Failed to send read acknowledge, exception: %s", exc_info=True)
+
+        try:
+            msgs = await self.client.get_messages(self, ids=[evt.id])
+            if len(msgs) == 0:
+                self.log.warning("Message %d not found", evt.id)
+                return
+        except Exception:
+            self.log.warning("Message %d not found, exception", evt.id)
+            return
+
         task = self._call_portal_message_handler(update, original_update, portal, sender)
         if portal.backfill_lock.locked:
             self.log.debug(

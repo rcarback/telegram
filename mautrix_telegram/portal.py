@@ -3442,22 +3442,6 @@ class Portal(DBPortal, BasePortal):
     async def _handle_telegram_message(
         self, source: au.AbstractUser, sender: p.Puppet | None, evt: Message
     ) -> None:
-
-        try:
-            await self.client.send_read_acknowledge(self)
-            time.sleep(2)
-        except Exception:
-            self.log.warning("Failed to send read acknowledge, exception: %s", exc_info=True)
-
-        try:
-            msgs = await self.client.get_messages(self, ids=[evt.id])
-            if len(msgs) == 0:
-                self.log.warning("Message %d not found", evt.id)
-                return
-        except Exception:
-            self.log.warning("Message %d not found, exception", evt.id)
-            return
-
         if not self.mxid:
             if source.is_relaybot and self.config["bridge.relaybot.ignore_unbridged_group_chat"]:
                 return
