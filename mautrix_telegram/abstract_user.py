@@ -760,6 +760,8 @@ class AbstractUser(ABC):
             self.log.debug("Ignoring relaybot-sent message %s to %s", update.id, portal.tgid_log)
             return
 
+        time.sleep(CATCH_UP_INTERVAL)
+
         task = self._call_portal_message_handler(update, original_update, portal, sender)
         if portal.backfill_lock.locked:
             self.log.debug(
@@ -769,7 +771,6 @@ class AbstractUser(ABC):
         else:
             await task
 
-        time.sleep(CATCH_UP_INTERVAL * 0.5)
         cutask = self._maybe_catch_up()
         background_task.create(cutask)
 
