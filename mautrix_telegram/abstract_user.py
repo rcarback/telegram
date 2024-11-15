@@ -92,6 +92,8 @@ if TYPE_CHECKING:
     from .__main__ import TelegramBridge
     from .bot import Bot
 
+CATCH_UP_INTERVAL = 3
+
 UpdateMessage = Union[
     UpdateShortChatMessage,
     UpdateShortMessage,
@@ -117,6 +119,10 @@ UPDATE_ERRORS = Counter(
 
 
 class AbstractUser(ABC):
+
+    _update_lock: asyncio.Lock = asyncio.Lock()
+    _last_update_time: float = 0
+    _catching_up: bool = False
     loop: asyncio.AbstractEventLoop = None
     log: TraceLogger
     az: AppService
@@ -754,6 +760,8 @@ class AbstractUser(ABC):
             self.log.debug("Ignoring relaybot-sent message %s to %s", update.id, portal.tgid_log)
             return
 
+        time.sleep(CATCH_UP_INTERVAL)
+
         task = self._call_portal_message_handler(update, original_update, portal, sender)
         if portal.backfill_lock.locked:
             self.log.debug(
@@ -762,6 +770,29 @@ class AbstractUser(ABC):
             background_task.create(task)
         else:
             await task
+
+        cutask = self._maybe_catch_up()
+        background_task.create(cutask)
+
+
+    async def _maybe_catch_up(self) -> None:
+        async with self._update_lock:
+            if self._catching_up:
+                return
+            self._catching_up = True
+            now = time.time()
+            interval = now - self._last_update_time
+
+        if interval < CATCH_UP_INTERVAL:
+            time.sleep(CATCH_UP_INTERVAL - interval)
+        self._last_update_time = time.time()
+        self.log.info("Initiating catch-up")
+        await self.client.catch_up()
+
+        async with self._update_lock:
+            self._catching_up = False
+
+
 
     async def _call_portal_message_handler(
         self,
